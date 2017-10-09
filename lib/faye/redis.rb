@@ -45,7 +45,7 @@ module Faye
         @server.info "Faye::Redis: redis reconnected"
       end
       @redis.on(:reconnect_failed) do |count|
-        @server.info "Faye::Redis: redis reconnect failed (#{count}/4)"
+        @server.info "Faye::Redis: redis reconnect failed #{count}"
       end
 
       @subscriber = @redis.pubsub
