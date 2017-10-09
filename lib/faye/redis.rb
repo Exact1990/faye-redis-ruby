@@ -17,6 +17,8 @@ module Faye
       @server  = server
       @options = options
       @factory = options[:factory] || RedisFactory.new(options)
+      EventMachine::Hiredis.logger = Logger.new('log/hiredis-faye.log')
+      EventMachine::Hiredis.logger.level = Logger::DEBUG
 
       init
     end
@@ -27,6 +29,24 @@ module Faye
       gc     = @options[:gc]        || DEFAULT_GC
       @ns    = @options[:namespace] || ''
       @redis = @factory.call
+      @redis.errback do |reason|
+        @server.error "Connection to redis failed : #{reason}"
+      end
+      @redis.on(:failed) do
+        @server.error "Faye::Redis: redis connection failed"
+      end
+      @redis.on(:disconnected) do
+        @server.info "Faye::Redis: redis disconnected"
+      end
+      @redis.on(:connected) do
+        @server.info "Faye::Redis: redis connected"
+      end
+      @redis.on(:reconnected) do
+        @server.info "Faye::Redis: redis reconnected"
+      end
+      @redis.on(:reconnect_failed) do |count|
+        @server.info "Faye::Redis: redis reconnect failed (#{count}/4)"
+      end
 
       @subscriber = @redis.pubsub
 
@@ -38,6 +58,9 @@ module Faye
       @subscriber.on(:message) do |topic, message|
         empty_queue(message) if topic == @message_channel
         @server.trigger(:close, message) if topic == @close_channel
+      end
+      @subscriber.on(:failed) do
+        @server.error 'Faye::Redis: pubsub redis connection failed'
       end
 
       @gc = EventMachine.add_periodic_timer(gc, &method(:gc))
