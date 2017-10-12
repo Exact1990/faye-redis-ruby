@@ -36,16 +36,16 @@ module Faye
         @server.error "Faye::Redis: redis connection failed"
       end
       @redis.on(:disconnected) do
-        @server.info "Faye::Redis: redis disconnected"
+        @server.warn "Faye::Redis: redis disconnected"
       end
       @redis.on(:connected) do
-        @server.info "Faye::Redis: redis connected"
+        @server.warn "Faye::Redis: redis connected"
       end
       @redis.on(:reconnected) do
-        @server.info "Faye::Redis: redis reconnected"
+        @server.warn "Faye::Redis: redis reconnected"
       end
       @redis.on(:reconnect_failed) do |count|
-        @server.info "Faye::Redis: redis reconnect failed #{count}"
+        @server.warn "Faye::Redis: redis reconnect failed #{count}"
       end
 
       @subscriber = @redis.pubsub
